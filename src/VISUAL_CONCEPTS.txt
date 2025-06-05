@@ -1,0 +1,126 @@
+ORM CONCEPT VISUALIZATION
+=======================
+
+OBJECT-RELATIONAL MAPPING
+-------------------------
+
+┌───────────────────────┐                  ┌───────────────────────┐
+│    C# Object World    │                  │  Relational Database  │
+├───────────────────────┤                  ├───────────────────────┤
+│                       │                  │                       │
+│  public class Product │      Maps To     │  CREATE TABLE products│
+│  {                    │ ◄──────────────► │  (                    │
+│   public int Id       │                  │    id SERIAL PRIMARY  │
+│   public string Name  │                  │    name TEXT          │
+│   public decimal Price│                  │    price NUMERIC      │
+│  }                    │                  │  )                    │
+│                       │                  │                       │
+└───────────────────────┘                  └───────────────────────┘
+
+
+CRUD OPERATIONS MAPPING
+----------------------
+
+┌───────────────────┐      ┌───────────────────-┐      ┌───────────────────┐
+│   C# Operation    │      │    ORM Method      │      │    SQL Generated  │
+├───────────────────┤      ├───────────────────-┤      ├───────────────────┤
+│ Create new object │ ──►  │ dbContext.Add()    │ ──►  │ INSERT INTO...    │
+│ Read object by ID │ ──►  │ dbContext.GetById()│ ──►  │ SELECT * WHERE id=│
+│ Read all objects  │ ──►  │ dbContext.GetAll() │ ──►  │ SELECT * FROM...  │
+│ Update object     │ ──►  │ dbContext.Update() │ ──►  │ UPDATE ... SET    │
+│ Delete object     │ ──►  │ dbContext.Remove() │ ──►  │ DELETE FROM...    │
+└───────────────────┘      └───────────────────-┘      └───────────────────┘
+
+
+LAYERED ARCHITECTURE
+------------------
+
+┌─────────────────────────────────────────────────────────┐
+│                      Client Code                        │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                    IDbContext Interface                 │
+│    (Defines contract for database operations)           │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│              SimplePostgreSqlDbContext Class            │
+│    (Implements database operations for PostgreSQL)      │
+└─────────────────────────────────────────────────────────┘
+               │                      │
+   Uses        │                      │  Uses
+               ▼                      ▼
+┌───────────────────────┐    ┌──────────────────────────┐
+│    SqlGenerator       │    │   Entity Mapping Logic   │
+│ (Creates SQL queries) │    │ (Objects ↔ Table Rows)   │
+└───────────────────────┘    └──────────────────────────┘
+               │                      │
+               │                      │
+               ▼                      ▼
+┌─────────────────────────────────────────────────────────┐
+│                  Database (PostgreSQL)                  │
+└─────────────────────────────────────────────────────────┘
+
+
+REFLECTIVE PROPERTY MAPPING
+--------------------------
+
+Class property       |  Database column
+--------------------+------------------
+Property Name        |  Column Name (lowercase)
+Property Type        |  Column Data Type
+Id property          |  Primary Key
+---------------------|-------------------
+string               |  TEXT
+int                  |  INTEGER
+decimal              |  NUMERIC
+DateTime             |  TIMESTAMP
+bool                 |  BOOLEAN
+Guid                 |  UUID
+etc...               |  etc...
+
+
+DATABASE OPERATION FLOW
+---------------------
+
+1. ┌─────────────┐
+   │ Start       │
+   └─────────────┘
+         │
+         ▼
+2. ┌─────────────────────────┐
+   │ Client calls DbContext  │
+   │ method (e.g. Add<T>)    │
+   └─────────────────────────┘
+         │
+         ▼
+3. ┌─────────────────────────┐
+   │ SqlGenerator creates    │
+   │ appropriate SQL         │
+   └─────────────────────────┘
+         │
+         ▼
+4. ┌─────────────────────────┐
+   │ Entity properties       │
+   │ mapped to parameters    │
+   └─────────────────────────┘
+         │
+         ▼
+5. ┌─────────────────────────┐
+   │ SQL executed against    │
+   │ database                │
+   └─────────────────────────┘
+         │
+         ▼
+6. ┌─────────────────────────┐
+   │ Results mapped back     │
+   │ to objects (if reading) │
+   └─────────────────────────┘
+         │
+         ▼
+7. ┌─────────────┐
+   │ End         │
+   └─────────────┘
